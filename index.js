@@ -1,14 +1,47 @@
 import express from "express"
 import mongoose from "mongoose"
 import bodyParser from "body-parser"
-import studentRouter from "./routers/studentRouter.js"
+import jwt from "jsonwebtoken"
 import userRouter from "./routers/userRouter.js"
+import productRouter from "./routers/productRouter.js"
+
 
 const app = express()
 
 app.use(bodyParser.json())
 
-let connectionString = "mongodb+srv://admin:123@cluster0.bpqkdg5.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+app.use(
+  (req,res,next) => {
+    const value = req.headers["authorization"] //authorization
+    if(value != null)
+    {
+      const token = value.replace("Bearer ","")
+      jwt.verify(
+        token,
+        "cbc-6503",
+        (err,decoded)=>{
+          if(decoded == null)
+          {
+            res.status(401).json({
+              message : "Unauthorized"
+            })
+          }else{
+            req.user = decoded
+            next()
+          }
+
+      
+        }
+    )
+    }else{
+      next()
+    }
+    
+    
+  }
+)
+
+const connectionString = "mongodb+srv://admin:123@cluster0.bpqkdg5.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 
 mongoose.connect(connectionString).then(
   ()=>{
@@ -20,8 +53,8 @@ mongoose.connect(connectionString).then(
   }
 )
 
-app.use("/students",studentRouter)
-app.use("/users", userRouter)
+app.use("/api/users", userRouter)
+app.use("/api/products",productRouter)
  
 
 
